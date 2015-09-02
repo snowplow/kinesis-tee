@@ -1,0 +1,7 @@
+Release 0.1.0 (2016-09-xx)
+----------------------------------
+Add Bintray credentials to .travis.yml (#12)
+Add support for transforming Snowplow enriched events into JSON (#7)
+Add support for stream passthrough (same region) (#6)
+Add support for streams in separate AWS regions (#5)
+Add support for sinking to stream in separate AWS account (#1)

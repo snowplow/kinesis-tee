@@ -1,0 +1,14 @@
+---
+project: kinesis-tee
+default-region: eu-west-1
+code-bucket: *** YOUR BUCKET NAME ***
+apps:
+  - gordon.contrib.lambdas
+  - gordon.contrib.helpers
+  - kinesis-tee-app
+kinesis:
+  ingest_stream_configuration:
+    lambda: kinesis-tee-app.kinesis-tee-code
+    stream: *** YOUR STREAM NAME ***
+    batch_size: 100
+    starting_position: LATEST

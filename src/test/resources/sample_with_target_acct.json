@@ -1,0 +1,19 @@
+{
+  "name": "My Kinesis Tee example",
+  "targetStream": {
+    "name": "my-target-stream",
+    "targetAccount": {
+      "com.snowplowanalytics.kinesistee.config.TargetAccount": {
+        "awsAccessKey": "*",
+        "awsSecretAccessKey": "*",
+        "region": "eu-west-1"
+      }
+    }
+  },
+  "transformer": {
+    "com.snowplowanalytics.kinesistee.config.Transformer": {
+      "builtIn": "SNOWPLOW_TO_NESTED_JSON"
+    }
+  },
+  "filter": null
+}
