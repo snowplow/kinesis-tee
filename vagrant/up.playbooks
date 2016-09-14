@@ -1,0 +1,4 @@
+oss-playbooks/java8.yml
+oss-playbooks/sbt.yml
+oss-playbooks/aws-tools.yml
+oss-playbooks/jq.yml
