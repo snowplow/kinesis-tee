@@ -2,9 +2,11 @@ lambdas:
   kinesis-tee-code:
     code: kinesis-tee-code
     runtime: java8
-    handler: com.snowplowanalytics.kinesistee.Main:kinesisEventHandler
+    handler: com.snowplowanalytics.kinesistee.Main::kinesisEventHandler
     description: dynamodb:eu-west-1/tee-config-gordon
-    
+    memory: 512
+    timeout: 60    
+
     build:
       - cp -R ./* {target} 
     policies:      
