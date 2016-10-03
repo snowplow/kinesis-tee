@@ -1,0 +1,42 @@
+lambdas:
+  kinesis-tee-code:
+    code: kinesis-tee-code
+    runtime: java8
+    handler: com.snowplowanalytics.kinesistee.Main::kinesisEventHandler
+    description: dynamodb:eu-west-1/tee-config-gordon
+    memory: 512
+    timeout: 60    
+
+    build:
+      - cp -R ./* {target} 
+    policies:      
+      read_kinesis:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Action:
+              - "kinesis:DescribeStream"
+              - "kinesis:ListStreams"
+              - "kinesis:GetShardIterator"
+              - "kinesis:GetRecords"
+            Resource: "*"
+            Effect: "Allow"   
+      read_dynamo:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Action:
+              - "dynamodb:DescribeTablem"
+              - "dynamodb:GetItem"
+              - "dynamodb:Query"
+              - "dynamodb:Scan"
+            Resource: "*"
+            Effect: "Allow" 
+      read_lambda_desc: 
+        Version: "2012-10-17"
+        Statement:
+          -
+            Action:
+              - "lambda:GetFunctionConfiguration"
+            Resource: "*"
+            Effect: "Allow"

@@ -1,0 +1,22 @@
+language: scala
+scala:
+- 2.11.8
+jdk:
+- oraclejdk8
+addons:
+  apt:
+    packages:
+        - p7zip-full
+before_install:
+  - gem install httparty
+deploy:
+  skip_cleanup: true
+  provider: script
+  script:
+    - sbt assembly && ./deploy/deploy.rb $TRAVIS_TAG
+  on:
+    tags: true
+env:
+  global:
+  - secure: F4fQ43tHDVfY6DCy8ys631eFdzg4Oqvm/e4y2I6MHdbE1yFjiHXpINUC9c5NPYVMkU/900o6CCVjAFuLu3nQyxHzPEAYajX4VC69cySH457SuzI6AGcy1W1jr3Ao238dfMZLRdxp7ObdwUAGxa3tEt6qLIT1hVI+m4lXCu1Re3sDeMWfVT/f6u0bZ4/2znsYYDxdiRsV7SwZHq67X6nvcGjdd0QZTHzO83oaKgaHw9BNZafh0KITqp8FKjHBP778tCTt7qLzrwbGYkCUrcilx+vbMDmsU3qrcBVVdcRN5ogYgFLoPdQaCD1Ns/FD6wyC0bwCcKf6bv0ILy6aPmj9h6IjK4Bl6yC4PZ80+/mbC7ut5+xrIV1/FrrjjaheK3NFclWn5xvq3M92i7oEG8oIXeaR68rOdrlf7UH6CCYdv2G8YDgyMMyIoaa5bL678HTP25SlhA3B+AeNksCKH203nTcfK46BKRYW8DkM3a+G5EKfRIKO/Z9EX63BIPmfZ8rJXmkH6G7vCiOSMuR/ijM+h3v2+xG5DblXD+B2wqfRBi+mbFy7iG7MwpT1yfelouQFSezAt993Q3VyA8I4zasWw0rc9KXihjskK+oGNL0D/mPV0ZQP3G3tlo9IY135w/80vMmyPgCxDNtqZ9gbW/U1fd2cbMLKQ6EKNaC6p8Uqxik=
+  - secure: dEn48W86SSH2fFLQfNf9FdS+S+9c4hCMIoMWKJdAm4uoYbLjt25P6a4tFRBXsqJCW3dXuCRgUfUHq2Q+Da+6lLdnyoLpW4XbRFjLi6rIaHl3mdXx12H3x2vjDiGOTZn4WIU25YC6N6i0uk5I6AqZ6wfi/lVZ0jZQaWs9k8sqdhnMYaHyxvc5LNcuLiyrnbphz2BhtTKABi/GXPsfmzRY94h3pG1e91LI45FqO11nbRLQAtL0e46QVfPE4z+KUA1DvwdX5HvbRbOfHVoc4f4443KtG35uv57rcBctr8+PXqZf+sq1f82PuZZpU/Y5nNO53ObSje++kMgCJTGswJZyVzYQljqRdfnUGDWxTM0v0FHngRPcAP1TptZTrc9+jIUIlGj6kKCSlQVvIDVan7bYlKxvyxhGeiWYzVMbVUK1ZOJzad5Itgq7B8Jti03NvLO9Fp/Sg5O8/1bhEyAvf8b9aZA0V24dxf70MAsG2bhJF//vwN2/4Eq1630bpK9aFKLKuFdmrvf+l3dHyNXueOBUb+/nACWFuOb6BFTtF5nH0jP4pyxaeu3GjYOEUCUmem+iIUOPp9zbmyDPGeyoBLeGVkCfu/PhmVrHz4a8OcE4Zkxf6RFcZKYL8t5Rh1VN7fhjcJLO4cpOeuoeENRvwDJvIGYRUaPLFMUnnBLUdiLej2s=

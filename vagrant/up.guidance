@@ -1,0 +1,4 @@
+To get started:
+
+cd /vagrant
+sbt assembly

@@ -1,0 +1,16 @@
+{
+  "schema": "iglu:com.snowplowanalytics.kinesistee.tbd",
+  "data": {
+    "name": "My Kinesis Tee example",
+    "targetStream": {
+      "name": "my-target-stream",
+      "targetAccount": null
+    },
+    "transformer": {
+      "com.snowplowanalytics.kinesistee.config.Transformer": {
+        "builtIn": "SNOWPLOW_TO_NESTED_JSON"
+      }
+    },
+    "filter": null
+  }
+}
