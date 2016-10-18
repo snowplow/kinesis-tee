@@ -11,6 +11,7 @@ import com.amazonaws.services.lambda.runtime.events.KinesisEvent
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent.KinesisEventRecord
 import com.snowplowanalytics.kinesistee.config.{_}
 import com.snowplowanalytics.kinesistee.filters.JavascriptFilter
+import com.snowplowanalytics.kinesistee.transformation.JavascriptTransformer
 
 import scala.collection.JavaConversions._
 import scalaz._
@@ -47,12 +48,13 @@ class Main {
     }
 
     val transformation = conf.transformer match {
-      case Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)) => Some(new SnowplowToJson)
+      case Some(Transformer("BuiltIn", "SNOWPLOW_TO_NESTED_JSON")) => Some(new SnowplowToJson)
+      case Some(Transformer("Javascript", f)) => Some(new JavascriptTransformer(new String(java.util.Base64.getDecoder.decode(f), "UTF-8")))
       case _ => None
     }
 
     val filter = conf.filter match {
-      case Some(f) => Some(new JavascriptFilter(new String(java.util.Base64.getDecoder.decode(f.javascript), "UTF-8")))
+      case Some(Filter("Javascript", f)) => Some(new JavascriptFilter(new String(java.util.Base64.getDecoder.decode(f), "UTF-8")))
       case _ => None
     }
 

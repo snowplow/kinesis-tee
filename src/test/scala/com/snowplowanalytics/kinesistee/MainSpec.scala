@@ -40,7 +40,7 @@ class MainSpec extends Specification with Mockito {
 
   val sampleConfig = Configuration(name = "My Kinesis Tee example",
                                    targetStream = TargetStream("my-target-stream", None),
-                                   transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
+                                   transformer = Some(Transformer("BuiltIn", "SNOWPLOW_TO_NESTED_JSON")),
                                    filter = None)
 
   class MockMain extends Main {
@@ -207,7 +207,7 @@ class MainSpec extends Specification with Mockito {
       val main = new MockMain {
         override val configurationBuilder:Builder = {
           val builder = mock[Builder]
-          builder.build(any[String], any[String])(any[DynamoDB]) returns sampleConfig.copy( filter = Some(new Filter(javascript = base64Js)) )
+          builder.build(any[String], any[String])(any[DynamoDB]) returns sampleConfig.copy( filter = Some(new Filter("Javascript", base64Js)) )
           builder
         }
         override val kinesisTee = new Tee {
@@ -249,4 +249,28 @@ class MainSpec extends Specification with Mockito {
     }
   }
 
+  "tee with a Javascript transformer given in the configuration" in {
+    val sampleTransformJs =
+      """
+        | function transform(row) {
+        |   if (data=="row") { return row; }
+        |   else { return false; }
+        | }
+      """.stripMargin
+
+    val base64Js = java.util.Base64.getEncoder.encodeToString(sampleTransformJs.getBytes(StandardCharsets.UTF_8))
+
+    val main = new MockMain {
+      override val configurationBuilder:Builder = {
+        val builder = mock[Builder]
+        builder.build(any[String], any[String])(any[DynamoDB]) returns sampleConfig.copy( transformer = Some(new Transformer("Javascript", base64Js)) )
+        builder
+      }
+    }
+    main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
+    there was one (main.kinesisTee).tee(any[RoutingStrategy],
+                                        any[Option[TransformationStrategy]],
+                                        eqTo(None),
+                                        any[Seq[Content]])
+  }
 }
