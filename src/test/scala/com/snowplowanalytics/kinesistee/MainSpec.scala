@@ -40,7 +40,7 @@ class MainSpec extends Specification with Mockito {
 
   val sampleConfig = Configuration(name = "My Kinesis Tee example",
                                    targetStream = TargetStream("my-target-stream", None),
-                                   transformer = Some(Transformer("BuiltIn", "SNOWPLOW_TO_NESTED_JSON")),
+                                   transformer = Some(Transformer("BuiltIn", "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON")),
                                    filter = None)
 
   class MockMain extends Main {

@@ -48,7 +48,7 @@ class Main {
     }
 
     val transformation = conf.transformer match {
-      case Some(Transformer("BuiltIn", "SNOWPLOW_TO_NESTED_JSON")) => Some(new SnowplowToJson)
+      case Some(Transformer("BuiltIn", "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON")) => Some(new SnowplowToJson)
       case Some(Transformer("Javascript", f)) => Some(new JavascriptTransformer(new String(java.util.Base64.getDecoder.decode(f), "UTF-8")))
       case _ => None
     }

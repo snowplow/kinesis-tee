@@ -7,7 +7,7 @@
   "transformer": {
     "com.snowplowanalytics.kinesistee.config.Transformer": {
       "type": "BuiltIn",
-      "value": "SNOWPLOW_TO_NESTED_JSON"
+      "value": "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"
     }
   },
   "filter": null
