@@ -1,88 +1,67 @@
 {
-   "namespace":"com.snowplowanalytics.kinesistee.config",
-   "name":"Configuration",
-   "type":"record",
-   "fields":[
-      {
-         "name":"name",
-         "type":"string"
-      },
-      {
-         "name":"targetStream",
-         "type":{
-            "name":"TargetStream",
-            "type":"record",
-            "fields":[
-               {
-                  "name":"name",
-                  "type":"string"
-               },
-               {
-                  "name":"targetAccount",
-                  "type":[
-                     "null",
-                     {
-                        "name":"TargetAccount",
-                        "type":"record",
-                        "fields":[
-                           {
-                              "name":"awsAccessKey",
-                              "type":"string"
-                           },
-                           {
-                              "name":"awsSecretAccessKey",
-                              "type":"string"
-                           },
-                           {
-                              "name":"region",
-                              "type":"string"
-                           }
-                        ]
-                     }
-                  ]
-               }
-            ]
-         }
-      },
-      {
-          "name":"transformer",
-          "type":[
-              "null",
-              {
-                  "name":"Transformer",
-                  "type":"record",
-                  "fields":[
-                  {
-                      "name": "type",
-                      "type": "string"
-                  },
-                  {
-                    "name": "value",
-                    "type": "string"
-                  }
-                 ]
-              }
-          ]
-      },
-      {
-         "name":"filter",
-         "type":[
-            "null",
-            {
-               "name":"Filter",
-               "type":"record",
-               "fields":[
-                  {
-                     "name":"type",
-                     "type":"string"
-                  },
-                  {
-                     "name":"value",
-                     "type":"string"
-                  }
-               ]
-            }
-         ]
-      }
-   ]
+	"namespace": "com.snowplowanalytics.kinesistee.config",
+	"name": "Configuration",
+	"type": "record",
+	"fields": [{
+		"name": "name",
+		"type": "string"
+	}, {
+		"name": "targetStream",
+		"type": {
+			"name": "TargetStream",
+			"type": "record",
+			"fields": [{
+				"name": "name",
+				"type": "string"
+			}, {
+				"name": "targetAccount",
+				"type": [
+					"null", {
+						"name": "TargetAccount",
+						"type": "record",
+						"fields": [{
+							"name": "awsAccessKey",
+							"type": "string"
+						}, {
+							"name": "awsSecretAccessKey",
+							"type": "string"
+						}, {
+							"name": "region",
+							"type": "string"
+						}]
+					}
+				]
+			}]
+		}
+	}, {
+		"name": "transformer",
+		"type": [
+			"null", {
+				"name": "Transformer",
+				"type": "record",
+				"fields": [{
+					"name": "type",
+					"type": "string"
+				}, {
+					"name": "value",
+					"type": "string"
+				}]
+			}
+		]
+	}, {
+		"name": "filter",
+		"type": [
+			"null", {
+				"name": "Filter",
+				"type": "record",
+				"fields": [{
+					"name": "type",
+					"type": "string"
+				}, {
+					"name": "value",
+					"type": "string"
+				}]
+			}
+		]
+	}]
 }
