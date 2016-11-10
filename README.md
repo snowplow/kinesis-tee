@@ -20,26 +20,30 @@ You configure Kinesis Tee with a self-describing Avro configuration file contain
 
 1. A single **source stream** to read records from
 2. A single **sink stream** to write records to
-3. An optional **stream transformer** to convert the records to another supported format
-4. An optional **stream filter** to determine whether to write the records to the sink stream
+3. An optional array of **stream operator** that are applied in series
+    - to convert the records to another supported format
+    - to determine whether to write the records to the sink stream
 
 Here is an example:
 
 ```json
 {
-  "schema": "iglu:com.snowplowanalytics.kinesis-tee/Config/avro/1-0-0",
-  "data": {
-    "name": "My Kinesis Tee example",
-    "targetStream": {
-      "name": "my-target-stream",
-    },
-    "transformer": "SNOWPLOW_TO_NESTED_JSON", // Or "NONE"
-    "filter": { // Or null
-      "javascript": "BASE64 ENCODED STRING"
+  "name": "My Kinesis Tee example",
+  "targetStream": {
+    "name": "my-target-stream",
+    "targetAccount": null
+  },
+  "operator": {
+      "array": [{
+        "operatorType": "TRANSFORM_BUILT_IN",
+        "value": "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"
+      }]
     }
-  }
 }
 ```
+
+
+See **[Cookbooks] [cookbook-wiki]** for more examples.
 
 Avro schema for configuration: **[com.snowplowanalytics.kinesistee/config/avro/1-0-0] [config-file]**
 
@@ -79,4 +83,6 @@ limitations under the License.
 
 [tee]: https://en.wikipedia.org/wiki/Tee_%28command%29
 
-[config-file]: http://iglucentral.com/schemas/com.snowplowanalytics.kinesistee.config/Configuration/avro/1-0-0
+[config-file]: http://iglucentral.com/schemas/com.snowplowanalytics.kinesistee.config/Configuration/avro/2-0-0
+[cookbook-wiki]: https://github.com/snowplow/kinesis-tee/wiki/Cookbooks
+

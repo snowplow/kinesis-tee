@@ -17,6 +17,7 @@ import com.snowplowanalytics.kinesistee.models.{FilteredContent, NonEmptyContent
 import org.specs2.mutable.Specification
 import org.specs2.scalaz.ValidationMatchers
 
+import scala.util.Try
 import scalaz.syntax.validation._
 import scalaz.{Failure, Success}
 
@@ -26,60 +27,60 @@ class JavascriptOperatorSpec extends Specification with ValidationMatchers {
 
     val jsTransform =
       """
-        | function operator(row) {
+        | function transform(row) {
         |     return row.replace("$", "");
         | }
       """.stripMargin
 
     val jsFilterTrue =
       """
-        | function operator(row) {
+        | function filter(row) {
         |     return true;
         | }
       """.stripMargin
 
     val jsFilterFalse =
       """
-        | function operator(row) {
+        | function filter(row) {
         |     return false;
         | }
       """.stripMargin
 
     val jsFilterHelloWorldOnly =
       """
-        | function operator(row) {
+        | function filter(row) {
         |      return row != "hello world";
         | }
       """.stripMargin
 
     "with a js transform operator function that strips `$` with `$hello world`, returns hello world" in {
-      val strategy = JavascriptOperator(jsTransform)
+      val strategy = JavascriptTransformOperator(jsTransform)
       strategy.apply(NonEmptyContent("hello world$", "p").success) must beSuccessful(NonEmptyContent("hello world", "p"))
     }
 
     "with a js filter operator function returns true, return Content" in {
-      val strategy = JavascriptOperator(jsFilterTrue)
+      val strategy = JavascriptFilterOperator(jsFilterTrue)
       strategy.apply(NonEmptyContent("hello world", "p").success) must beSuccessful(NonEmptyContent("hello world", "p"))
     }
 
     "with a js filter operator function that only returns false, return FilteredContent" in {
-      val strategy = JavascriptOperator(jsFilterFalse)
+      val strategy = JavascriptFilterOperator(jsFilterFalse)
       strategy.apply(NonEmptyContent("hello world", "p").success) must beSuccessful(FilteredContent)
     }
 
     "with a js filter operator function that filters out `hello world`, return FilteredContent if content is `hello world`" in {
-      val strategy = JavascriptOperator(jsFilterHelloWorldOnly)
+      val strategy = JavascriptFilterOperator(jsFilterHelloWorldOnly)
       strategy.apply(NonEmptyContent("hello world", "p").success) must beSuccessful(FilteredContent)
     }
 
   }
 
-  "An invalid js operator" should {
+  "An invalid js filter" should {
 
     "fail if js is not well formed" in {
       val badlyFormedJs =
         """
-          | function operator(row) {
+          | function filter(row) {
         """.stripMargin
 
       val expectedError =
@@ -87,13 +88,13 @@ class JavascriptOperatorSpec extends Specification with ValidationMatchers {
           |
           |        ^ in <eval> at line number 3 at column number 8""".stripMargin
 
-      scala.util.Try(JavascriptOperator(badlyFormedJs)) match {
+      scala.util.Try(JavascriptFilterOperator(badlyFormedJs)) match {
         case scala.util.Success(_) => ko("Badly formed JS did not generate exception")
         case scala.util.Failure(f) => f.getMessage.replaceAll("\\s", "") mustEqual expectedError.replaceAll("\\s", "")
       }
     }
 
-    "fail if the js is missing a 'operator' function" in {
+    "fail if the js is missing a 'filter' function" in {
       val missingfunc =
         """
           |function banana() {
@@ -101,22 +102,66 @@ class JavascriptOperatorSpec extends Specification with ValidationMatchers {
           |}
         """.stripMargin
 
-      val strategy = JavascriptOperator(missingfunc)
+      val strategy = JavascriptFilterOperator(missingfunc)
       strategy.apply(NonEmptyContent("abc", "p").success) match {
-        case Success(_) => ko("Javascript Operator cannot succeed without a 'operator' function")
-        case Failure(f) => f.toString() mustEqual "NonEmptyList(java.lang.NoSuchMethodException: No such function operator)"
+        case Success(_) => ko("Javascript Filter Operator cannot succeed without a 'filter' function")
+        case Failure(f) => f.toString() mustEqual "NonEmptyList(java.lang.NoSuchMethodException: No such function filter)"
       }
     }
 
     "fail if the js has a runtime error" in {
       val runtimeBloop =
         """
-          |function operator(org) { return 1/0; }
+          |function filter(org) { return 1/0; }
         """.stripMargin
 
-      val strategy = JavascriptOperator(runtimeBloop)
+      val strategy = JavascriptFilterOperator(runtimeBloop)
       strategy.apply(NonEmptyContent("abc", "p").success) must beFailing
     }
+  }
 
+  "An invalid js transform" should {
+
+    "fail if js is not well formed" in {
+      val badlyFormedJs =
+        """
+          | function transform(row) {
+        """.stripMargin
+
+      val expectedError =
+        """<eval>:3:8 Expected } but found eof
+          |
+          |        ^ in <eval> at line number 3 at column number 8""".stripMargin
+
+      scala.util.Try(JavascriptTransformOperator(badlyFormedJs)) match {
+        case scala.util.Success(_) => ko("Badly formed JS did not generate exception")
+        case scala.util.Failure(f) => f.getMessage.replaceAll("\\s", "") mustEqual expectedError.replaceAll("\\s", "")
+      }
+    }
+
+    "fail if the js is missing a 'transform' function" in {
+      val missingfunc =
+        """
+          |function banana(row) {
+          |   return row;
+          |}
+        """.stripMargin
+
+      val strategy = JavascriptTransformOperator(missingfunc)
+      strategy.apply(NonEmptyContent("abc", "p").success) match {
+        case Success(_) => ko("Javascript Transform Operator cannot succeed without a 'transform' function")
+        case Failure(f) => f.toString() mustEqual "NonEmptyList(java.lang.NoSuchMethodException: No such function transform)"
+      }
+    }
+
+    "fail if the js has a runtime error" in {
+      val runtimeBloop =
+        """
+          |function transform(org) { return 1/0; }
+        """.stripMargin
+
+      val strategy = JavascriptTransformOperator(runtimeBloop)
+      strategy.apply(NonEmptyContent("abc", "p").success) must beFailing
+    }
   }
 }

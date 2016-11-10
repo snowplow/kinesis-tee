@@ -55,7 +55,7 @@ class KinesisTeeConfigSchemaSpec extends Specification {
         targetStream = TargetStream("my-target-stream", Some(TargetAccount("*", "*", "eu-west-1"))),
         operator = Some(List(
                       Operator(OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"),
-                      Operator(OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON_2")
+                      Operator(OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_RAW_EVENT_TO_JSON")
                     )))
     }
   }
