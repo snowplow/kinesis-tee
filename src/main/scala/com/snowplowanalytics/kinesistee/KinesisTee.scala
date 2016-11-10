@@ -39,46 +39,36 @@ object KinesisTee extends Tee {
           operationStrategy: List[Operator],
           content: Seq[NonEmptyContent]) = {
 
-    /**
-      * Apply operators in sequence
-      * @param content
-      * @return content
-      */
-    def operations(content: NonEmptyContent) = {
-      var transformedContent: ValidationNel[Throwable, Content] = NonEmptyContent(content.row, content.partitionKey).success
-      operationStrategy.foreach((operator: Operator) => {
-        transformedContent = operator(transformedContent)
-      })
-      transformedContent
-    }
-
-    /**
-      * Filter FilteredContent and Failures
-      * @param content
-      * @return Boolean
-      */
-
-    def filterEmptyContent(content: ValidationNel[Throwable, Content]) = {
-      content match {
-        case Success(NonEmptyContent(row, partitionKey)) => true
-        case Success(FilteredContent) => false
-        case Failure(f) =>
-          System.err.println(s"Error filtering item '$content'\n\n:Reason: ${f.head.getMessage}")
-          false
-      }
-    }
-
-    def route = {
-      routingStrategy.route() match {
-        case Success(s) => s
-        case Failure(f) => throw new IllegalStateException(s"Error routing item '$content': ${f.head}")
-      }
-    }
-
-    content
-        .map(operations)
-        .filter(filterEmptyContent)
-        .foreach(route.write)
+  // Apply operations in sequence
+  def operations(content: NonEmptyContent) = {
+    var transformedContent: ValidationNel[Throwable, Content] = NonEmptyContent(content.row, content.partitionKey).success
+    operationStrategy.foreach((operator: Operator) => {
+      transformedContent = operator(transformedContent)
+    })
+    transformedContent
   }
 
+  // Filter Out failures and FilteredContent
+  def filterEmptyContent(content: ValidationNel[Throwable, Content]) = {
+    content match {
+      case Success(NonEmptyContent(row, partitionKey)) => true
+      case Success(FilteredContent) => false
+      case Failure(f) =>
+        System.err.println(s"Error filtering item '$content'\n\n:Reason: ${f.head.getMessage}")
+        false
+    }
+  }
+
+  def route = {
+    routingStrategy.route() match {
+      case Success(s) => s
+      case Failure(f) => throw new IllegalStateException(s"Error routing item '$content': ${f.head}")
+    }
+  }
+
+  content
+      .map(operations)
+      .filter(filterEmptyContent)
+      .foreach(route.write)
+  }
 }

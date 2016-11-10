@@ -191,7 +191,7 @@ class MainSpec extends Specification with Mockito {
 
     val sampleFilterJs =
       """
-        | function operator(data) {
+        | function filter(data) {
         |   if (data=="good") { return true; }
         |   else { return false; }
         | }
@@ -200,7 +200,7 @@ class MainSpec extends Specification with Mockito {
 
     val sampleTransformJs =
       """
-        | function operator(data) {
+        | function transform(data) {
         |   return data.replace("$", "")
         | }
       """.stripMargin
@@ -212,15 +212,15 @@ class MainSpec extends Specification with Mockito {
       override val configurationBuilder:Builder = {
         val builder = mock[Builder]
         builder.build(any[String], any[String])(any[DynamoDB]) returns sampleConfig.copy(operator = Some(List(
-          Operator(OperatorType.JAVASCRIPT, base64TransformJs),
-          Operator(OperatorType.JAVASCRIPT, base64FilterJs)
+          Operator(OperatorType.JAVASCRIPT_TRANSFORM, base64TransformJs),
+          Operator(OperatorType.JAVASCRIPT_FILTER, base64FilterJs)
         )))
         builder
       }
 
       override val kinesisTee = new Tee {
 
-        var operations: List[Operator] = List()
+        var operations: List[Operator] = Nil
 
         override def tee(routingStrategy: RoutingStrategy,
                          operationStrategy: List[Operator],
@@ -231,6 +231,6 @@ class MainSpec extends Specification with Mockito {
     }
 
     main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
-    main.kinesisTee.operations mustEqual List(JavascriptOperator(sampleTransformJs), JavascriptOperator(sampleFilterJs))
+    main.kinesisTee.operations mustEqual List(JavascriptTransformOperator(sampleTransformJs), JavascriptFilterOperator(sampleFilterJs))
   }
 }

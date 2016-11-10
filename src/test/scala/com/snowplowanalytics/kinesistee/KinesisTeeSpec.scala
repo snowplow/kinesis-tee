@@ -37,7 +37,7 @@ class KinesisTeeSpec extends Specification with Mockito {
     "write everything to the StreamWriter if no operator is in use" in {
       val sampleContent = Seq(NonEmptyContent("a", "p"), NonEmptyContent("a", "p"), NonEmptyContent("a", "p"))
       val route = mockRoute
-      KinesisTee.tee(route, List(), sampleContent)
+      KinesisTee.tee(route, Nil, sampleContent)
       there was three (route.mockStreamWriter).write(eqTo(NonEmptyContent("a", "p").success))
     }
 
@@ -80,6 +80,7 @@ class KinesisTeeSpec extends Specification with Mockito {
           content match {
             case Success(NonEmptyContent("a", "p")) => NonEmptyContent("b", "p").success
             case Success(s) => s.success
+            case _ => throw new RuntimeException("Test unexpectedly returned a failure")
           }
         }
       }
@@ -89,6 +90,7 @@ class KinesisTeeSpec extends Specification with Mockito {
           content match {
             case Success(NonEmptyContent("b", "p")) => NonEmptyContent("b", "p").success
             case Success(s) => FilteredContent.success
+            case _ => throw new RuntimeException("Test unexpectedly returned a failure")
           }
         }
       }
