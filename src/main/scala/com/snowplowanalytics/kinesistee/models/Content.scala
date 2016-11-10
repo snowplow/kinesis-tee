@@ -12,9 +12,17 @@
  */
 package com.snowplowanalytics.kinesistee.models
 
+
+sealed trait Content
 /**
   * Usually a Kinesis record
   * @param row the data contained by the record
   * @param partitionKey the partition key in the record
   */
-case class Content(row: String, partitionKey: String)
+case class NonEmptyContent(row: String, partitionKey: String) extends Content
+
+/**
+  * Filtered Content Record
+  */
+case object FilteredContent extends Content
+

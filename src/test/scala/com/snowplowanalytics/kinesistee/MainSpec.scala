@@ -13,6 +13,7 @@
 package com.snowplowanalytics.kinesistee
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 import awscala.dynamodbv2.DynamoDB
 import com.amazonaws.regions.{Region, Regions}
@@ -20,28 +21,22 @@ import com.amazonaws.services.lambda.runtime.events.KinesisEvent
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent.KinesisEventRecord
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import com.snowplowanalytics.kinesistee.config.{TargetStream, Transformer, _}
+import com.snowplowanalytics.kinesistee.config.{TargetStream, _}
 import com.amazonaws.services.lambda.runtime.{Context => LambdaContext}
-import com.snowplowanalytics.kinesistee.filters.FilterStrategy
-import com.snowplowanalytics.kinesistee.models.{Content, Stream}
+import com.snowplowanalytics.kinesistee.models.{NonEmptyContent, Stream}
 import com.snowplowanalytics.kinesistee.routing.{PointToPointRoute, RoutingStrategy}
-import com.snowplowanalytics.kinesistee.transformation.{SnowplowToJson, TransformationStrategy}
 import org.mockito.Matchers.{eq => eqTo}
 
-import scalaz.{Success, ValidationNel}
 import scalaz.syntax.validation._
 import scala.collection.JavaConversions._
 import scala.language.reflectiveCalls
-import java.nio.charset.StandardCharsets
-
 import com.amazonaws.services.kinesis.AmazonKinesisClient
 
 class MainSpec extends Specification with Mockito {
 
   val sampleConfig = Configuration(name = "My Kinesis Tee example",
-                                   targetStream = TargetStream("my-target-stream", None),
-                                   transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
-                                   filter = None)
+    targetStream = TargetStream("my-target-stream", None),
+    operator = Some(List()))
 
   class MockMain extends Main {
     override val kinesisTee:Tee = mock[Tee]
@@ -90,22 +85,22 @@ class MainSpec extends Specification with Mockito {
 
   "getting configuration" should {
 
-      "use the lambda utils to grab the ARN" in {
-        val main = new MockMain
-        main.getConfiguration(sampleContext)
-        there was one (main.lambdaUtils).getRegionFromArn(eqTo(sampleArn))
-      }
+    "use the lambda utils to grab the ARN" in {
+      val main = new MockMain
+      main.getConfiguration(sampleContext)
+      there was one (main.lambdaUtils).getRegionFromArn(eqTo(sampleArn))
+    }
 
-     "throw an exception if the ARN cannot be ascertained" in {
-       val main = new MockMain {
-         override val lambdaUtils:AwsLambdaUtils = {
-           val util = mock[AwsLambdaUtils]
-           util.getRegionFromArn(any[String]) returns "Cannot handle it".failureNel
-           util
-         }
-       }
-       main.getConfiguration(sampleContext) must throwA[IllegalStateException](message = "Cannot handle it")
-     }
+    "throw an exception if the ARN cannot be ascertained" in {
+      val main = new MockMain {
+        override val lambdaUtils:AwsLambdaUtils = {
+          val util = mock[AwsLambdaUtils]
+          util.getRegionFromArn(any[String]) returns "Cannot handle it".failureNel
+          util
+        }
+      }
+      main.getConfiguration(sampleContext) must throwA[IllegalStateException](message = "Cannot handle it")
+    }
 
     "use the given arn/function name to fetch lambda description" in {
       val mockMain = new MockMain
@@ -162,10 +157,9 @@ class MainSpec extends Specification with Mockito {
     "tee with the given records" in {
       val main = new MockMain
       main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
-      there was one (main.kinesisTee).tee(any[RoutingStrategy],
-                                          any[Option[TransformationStrategy]],
-                                          any[Option[FilterStrategy]],
-                                          eqTo(Seq(Content("hello world", "p"))))
+      there was one(main.kinesisTee).tee(any[RoutingStrategy],
+        any[List[Operator]],
+        eqTo(Seq(NonEmptyContent("hello world", "p"))))
 
     }
 
@@ -176,77 +170,67 @@ class MainSpec extends Specification with Mockito {
           var lastRoutingStrategy: Option[PointToPointRoute] = None
 
           override def tee(routingStrategy: RoutingStrategy,
-                           transformationStrategy: Option[TransformationStrategy],
-                           filterStrategy: Option[FilterStrategy],
-                           content: Seq[Content]): Unit = {
+                           operationStrategy: List[Operator],
+                           content: Seq[NonEmptyContent]): Unit = {
             lastRoutingStrategy = Some(routingStrategy.asInstanceOf[PointToPointRoute])
           }
         }
       }
+
       main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
       val expectedRouter = new PointToPointRoute(new StreamWriter(Stream(sampleConfig.targetStream.name, Region.getRegion(Regions.US_EAST_1)),
-                                                                  sampleConfig.targetStream.targetAccount,
-                                                                  mock[AmazonKinesisClient]))
+        sampleConfig.targetStream.targetAccount,
+        mock[AmazonKinesisClient]))
 
-      val lastRoutingStrategy:PointToPointRoute = main.kinesisTee.lastRoutingStrategy.get
+      val lastRoutingStrategy: PointToPointRoute = main.kinesisTee.lastRoutingStrategy.get
       lastRoutingStrategy.toString mustEqual expectedRouter.toString
-    }
-
-    "tee using the filter strategy defined in the configuration (base64 encoded js)" in {
-
-      val sampleFilterJs =
-        """
-          | function filter(data) {
-          |   if (data=="good") { return true; }
-          |   else { return false; }
-          | }
-        """.stripMargin
-
-      val base64Js = java.util.Base64.getEncoder.encodeToString(sampleFilterJs.getBytes(StandardCharsets.UTF_8))
-
-      val main = new MockMain {
-        override val configurationBuilder:Builder = {
-          val builder = mock[Builder]
-          builder.build(any[String], any[String])(any[DynamoDB]) returns sampleConfig.copy( filter = Some(new Filter(javascript = base64Js)) )
-          builder
-        }
-        override val kinesisTee = new Tee {
-          var lastFilterStrategy:Option[FilterStrategy] = None
-
-          override def tee(routingStrategy: RoutingStrategy,
-                           transformationStrategy: Option[TransformationStrategy],
-                           filterStrategy: Option[FilterStrategy],
-                           content: Seq[Content]): Unit = {
-            lastFilterStrategy = filterStrategy
-          }
-        }
-      }
-
-      main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
-      val lastFilter = main.kinesisTee.lastFilterStrategy.get
-      val passing = lastFilter.filter(Content("good", "p"))
-      val failing = lastFilter.filter(Content("something else", "p"))
-
-      (passing, failing) match {
-        case (Success(p), Success(f)) =>  (p, f) mustEqual (true, false)
-        case _ => ko("The test filter failed to execute, this is unexpected")
-      }
-    }
-
-    "tee with a transformer given in the configuration (set to None)" in {
-      val main = new MockMain {
-        override val configurationBuilder:Builder = {
-          val builder = mock[Builder]
-          builder.build(any[String], any[String])(any[DynamoDB]) returns sampleConfig.copy(transformer = None)
-          builder
-        }
-      }
-      main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
-      there was one (main.kinesisTee).tee(any[RoutingStrategy],
-                                          eqTo(None),
-                                          any[Option[FilterStrategy]],
-                                          any[Seq[Content]])
     }
   }
 
+  "tee using the operators defined in the configuration" in {
+
+    val sampleFilterJs =
+      """
+        | function operator(data) {
+        |   if (data=="good") { return true; }
+        |   else { return false; }
+        | }
+      """.stripMargin
+
+
+    val sampleTransformJs =
+      """
+        | function operator(data) {
+        |   return data.replace("$", "")
+        | }
+      """.stripMargin
+
+    val base64FilterJs = java.util.Base64.getEncoder.encodeToString(sampleFilterJs.getBytes(StandardCharsets.UTF_8))
+    val base64TransformJs = java.util.Base64.getEncoder.encodeToString(sampleTransformJs.getBytes(StandardCharsets.UTF_8))
+
+    val main = new MockMain {
+      override val configurationBuilder:Builder = {
+        val builder = mock[Builder]
+        builder.build(any[String], any[String])(any[DynamoDB]) returns sampleConfig.copy(operator = Some(List(
+          Operator(OperatorType.JAVASCRIPT, base64TransformJs),
+          Operator(OperatorType.JAVASCRIPT, base64FilterJs)
+        )))
+        builder
+      }
+
+      override val kinesisTee = new Tee {
+
+        var operations: List[Operator] = List()
+
+        override def tee(routingStrategy: RoutingStrategy,
+                         operationStrategy: List[Operator],
+                         content: Seq[NonEmptyContent]): Unit = {
+          operations = operationStrategy
+        }
+      }
+    }
+
+    main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
+    main.kinesisTee.operations mustEqual List(JavascriptOperator(sampleTransformJs), JavascriptOperator(sampleFilterJs))
+  }
 }

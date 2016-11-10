@@ -40,8 +40,7 @@ class KinesisTeeConfigSchemaSpec extends Specification {
       case scala.util.Failure(f) => ko(stackTrace(f))
       case scala.util.Success(s) => s mustEqual Configuration(name = "My Kinesis Tee example",
                                                               targetStream = TargetStream("my-target-stream", None),
-                                                              transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
-                                                              filter = None)
+                                                              operator = Some(List(Operator(OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"))))
     }
   }
 
@@ -54,8 +53,10 @@ class KinesisTeeConfigSchemaSpec extends Specification {
       case scala.util.Failure(f) => ko(stackTrace(f))
       case scala.util.Success(s) => s mustEqual Configuration(name = "My Kinesis Tee example",
         targetStream = TargetStream("my-target-stream", Some(TargetAccount("*", "*", "eu-west-1"))),
-        transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
-        filter = None)
+        operator = Some(List(
+                      Operator(OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"),
+                      Operator(OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON_2")
+                    )))
     }
   }
 

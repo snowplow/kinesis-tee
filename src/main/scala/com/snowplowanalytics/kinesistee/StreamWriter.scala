@@ -19,7 +19,9 @@ import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider, BasicAWSCrede
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.kinesis.AmazonKinesisClient
 import com.snowplowanalytics.kinesistee.config.TargetAccount
-import com.snowplowanalytics.kinesistee.models.{Content, Stream}
+import com.snowplowanalytics.kinesistee.models.{Content, FilteredContent, NonEmptyContent, Stream}
+
+import scalaz._
 
 /**
   * Write a record to a predefined stream
@@ -29,12 +31,17 @@ import com.snowplowanalytics.kinesistee.models.{Content, Stream}
   */
 class StreamWriter(stream: Stream, targetAccount: Option[TargetAccount], producer: AmazonKinesisClient) {
 
-  /**
+  /*
     * push the given record to the requested stream
     * @param content the record to push
     */
-  def write(content: Content): Unit = {
-    producer.putRecord(stream.name, ByteBuffer.wrap(content.row.getBytes("UTF-8")), content.partitionKey)
+  def write(content: ValidationNel[Throwable,Content]): Unit = {
+    content match {
+      case Success(NonEmptyContent(row, partitionKey)) => producer.putRecord(stream.name, ByteBuffer.wrap(row.getBytes("UTF-8")), partitionKey)
+      case Success(FilteredContent) => None
+      case Failure(_) => None
+    }
+
   }
 
   def flush: Unit = {

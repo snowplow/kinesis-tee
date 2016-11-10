@@ -10,18 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.kinesistee.transformation
+package com.snowplowanalytics.kinesistee
 
-import com.snowplowanalytics.kinesistee.models.Content
-import org.json4s.JValue
+import com.snowplowanalytics.kinesistee.models.NonEmptyContent
 import org.specs2.mutable.Specification
 import org.specs2.scalaz.ValidationMatchers
-import org.json4s.JsonDSL._
-import org.json4s.jackson.JsonMethods._
+import scalaz.syntax.validation._
 
 import scalaz.{Failure, Success}
 
-class SnowplowToJsonSpec extends Specification with ValidationMatchers {
+class SnowplowEnrichedToNestedJsonTransformOperatorSpec extends Specification with ValidationMatchers {
 
   val unstructJson =
     """{
@@ -250,13 +248,13 @@ class SnowplowToJsonSpec extends Specification with ValidationMatchers {
   "converting a Snowplow enriched event to JSON" should {
 
     "convert a valid snowplow event to JSON" in {
-      new SnowplowToJson().transform(Content(eventValues, "p")) must beSuccessful
+      SnowplowEnrichedToNestedJsonTransformOperator().apply(NonEmptyContent(eventValues, "p").success) must beSuccessful
     }
 
     "give the snowplow analytics sdk error message on failure" in {
       val expectedMsg = """NonEmptyList(java.lang.IllegalArgumentException: Expected 131 fields, received 1 fields. This may be caused by attempting to use this SDK version on an older or newer version of Snowplow enriched events.)"""
 
-      new SnowplowToJson().transform(Content("", "p")) match {
+      SnowplowEnrichedToNestedJsonTransformOperator().apply(NonEmptyContent("s", "p").success) match {
         case Success(s) => ko("have failed, it should")
         case Failure(f) => f.toString mustEqual expectedMsg
       }

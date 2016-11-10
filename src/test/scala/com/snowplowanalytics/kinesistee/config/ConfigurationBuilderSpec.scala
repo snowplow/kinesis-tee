@@ -24,9 +24,8 @@ class ConfigurationBuilderSpec extends Specification with Mockito {
 
   val sampleGoodConfig = scala.io.Source.fromURL(getClass.getResource("/sample_self_describing_config.json")).mkString
   val sampleConfig = Configuration(name = "My Kinesis Tee example",
-                                   targetStream = TargetStream("my-target-stream", None),
-                                   transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
-                                   filter = None)
+    targetStream = TargetStream("my-target-stream", None),
+    operator = Some(List(Operator(OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"))))
 
   "A valid configuration" should {
 
@@ -68,8 +67,8 @@ class ConfigurationBuilderSpec extends Specification with Mockito {
       val items:util.List[java.util.Map[java.lang.String,com.amazonaws.services.dynamodbv2.model.AttributeValue]] = new util.ArrayList()
 
       val one:util.Map[String,com.amazonaws.services.dynamodbv2.model.AttributeValue] = new util.HashMap()
-      one.put("id", new AttributeValue(Some("with-id")))
-      one.put("configuration", new AttributeValue(Some(sampleGoodConfig)))
+      one.put("id", new AttributeValue(s = Some("with-id"), l = Nil))
+      one.put("configuration", new AttributeValue(s = Some(sampleGoodConfig), l = Nil))
       items.add(one)
 
       res.getItems returns items
@@ -95,8 +94,8 @@ class ConfigurationBuilderSpec extends Specification with Mockito {
       val items:util.List[java.util.Map[java.lang.String,com.amazonaws.services.dynamodbv2.model.AttributeValue]] = new util.ArrayList()
 
       val one:util.Map[String,com.amazonaws.services.dynamodbv2.model.AttributeValue] = new util.HashMap()
-      one.put("id", new AttributeValue(Some("with-id")))
-      one.put("this-is-not-config", new AttributeValue(Some("abc")))
+      one.put("id", new AttributeValue(s = Some("with-id"), l = Nil))
+      one.put("this-is-not-config", new AttributeValue(s = Some("abc"), l = Nil))
 
       items.add(one)
       res.getItems returns items
