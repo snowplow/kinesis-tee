@@ -12,17 +12,14 @@
  */
 package com.snowplowanalytics.kinesistee
 
-import com.snowplowanalytics.kinesistee.filters.FilterStrategy
-import com.snowplowanalytics.kinesistee.models.{Content, Stream}
+import com.snowplowanalytics.kinesistee.models.{NonEmptyContent}
 import com.snowplowanalytics.kinesistee.routing.RoutingStrategy
-import com.snowplowanalytics.kinesistee.transformation.TransformationStrategy
 
 /**
   * This trait allows us to stub out tee behaviours
   */
 trait Tee {
   def tee(routingStrategy: RoutingStrategy,
-          transformationStrategy: Option[TransformationStrategy],
-          filterStrategy: Option[FilterStrategy],
-          content: Seq[Content]): Unit
+          operationStrategy: List[Operator],
+          content: Seq[NonEmptyContent]): Unit
 }

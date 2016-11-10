@@ -9,19 +9,17 @@
  * software distributed under the Apache License Version 2.0 is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
-
  */
-package com.snowplowanalytics.kinesistee.transformation
+package com.snowplowanalytics.kinesistee
 
-import com.snowplowanalytics.kinesistee.models.Content
+import com.snowplowanalytics.kinesistee.models.NonEmptyContent
 import org.specs2.mutable.Specification
 import org.specs2.scalaz.ValidationMatchers
+import scalaz.syntax.validation._
 
-import scalaz.{ Failure, Success}
+import scalaz.{Failure, Success}
 
-
-class JavascriptTransformerSpec extends Specification with ValidationMatchers {
-
+class SnowplowEnrichedToNestedJsonTransformOperatorSpec extends Specification with ValidationMatchers {
 
   val unstructJson =
     """{
@@ -247,75 +245,21 @@ class JavascriptTransformerSpec extends Specification with ValidationMatchers {
 
   val eventValues = nvPairs.unzip._2.mkString("\t")
 
-  val jsSuccessTransform =
-    """
-      |function transform(row) {
-      |   return row
-      |}
-    """.stripMargin
+  "converting a Snowplow enriched event to JSON" should {
 
-  val jsFailTransform =
-    """
-      |function transform(row) {
-      |   return false
-      |}
-    """.stripMargin
-
-  "A valid JS Transform" should {
-
-    "with a js function that successfully transforms, returns content" in {
-      val strategy = new JavascriptTransformer(jsSuccessTransform)
-      strategy.transform(Content(eventValues, "p")) must beSuccessful(Content(eventValues, "p"))
+    "convert a valid snowplow event to JSON" in {
+      SnowplowEnrichedToNestedJsonTransformOperator().apply(NonEmptyContent(eventValues, "p").success) must beSuccessful
     }
 
-    "with a js function that fails transforming, returns failure" in {
-      val strategy = new JavascriptTransformer(jsFailTransform)
-      strategy.transform(Content(eventValues, "p")) must beFailing
+    "give the snowplow analytics sdk error message on failure" in {
+      val expectedMsg = """NonEmptyList(java.lang.IllegalArgumentException: Expected 131 fields, received 1 fields. This may be caused by attempting to use this SDK version on an older or newer version of Snowplow enriched events.)"""
+
+      SnowplowEnrichedToNestedJsonTransformOperator().apply(NonEmptyContent("s", "p").success) match {
+        case Success(s) => ko("have failed, it should")
+        case Failure(f) => f.toString mustEqual expectedMsg
+      }
     }
 
   }
 
-  "An invalid js transform" should {
-
-    "fail if js is not well formed" in {
-      val badlyFormedJs =
-        """
-          |function transform(row) {
-        """.stripMargin
-
-      val expectedError =
-        """<eval>:3:8 Expected } but found eof
-          |
-          |        ^ in <eval> at line number 3 at column number 8""".stripMargin
-
-      scala.util.Try(new JavascriptTransformer(badlyFormedJs)) match {
-        case scala.util.Success(_) => ko("Badly formed JS did not generate exception")
-        case scala.util.Failure(f) => f.getMessage.replaceAll("\\s", "") mustEqual expectedError.replaceAll("\\s", "")
-      }
-    }
-
-    "fail if the js is missing a 'transform' function" in {
-      val missingTransformFunc =
-        """
-          |function banana(row) {
-          |   return "papaya"
-          |}
-        """.stripMargin
-
-      val strategy = new JavascriptTransformer(missingTransformFunc)
-      strategy.transform(Content("abc", "p")) match {
-        case Success(_) => ko("Transform cannot succeed without a 'transform' function")
-        case Failure(f) => f.toString() mustEqual "NonEmptyList(java.lang.NoSuchMethodException: No such function transform)"
-      }
-    }
-
-    "fail if the js has a runtime error" in {
-      val runtimeBloop =
-        """
-          |function transform(row) { return someKey; }
-        """.stripMargin
-      val strategy = new JavascriptTransformer(runtimeBloop)
-      strategy.transform(Content("BeepBoop", "p")) must beFailing
-    }
-  }
 }

@@ -4,11 +4,10 @@
     "name": "my-target-stream",
     "targetAccount": null
   },
-  "transformer": {
-    "com.snowplowanalytics.kinesistee.config.Transformer": {
-      "type": "BuiltIn",
-      "value": "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"
+  "operator": {
+      "array": [{
+        "operatorType": "TRANSFORM_BUILT_IN",
+        "value": "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"
+      }]
     }
-  },
-  "filter": null
 }

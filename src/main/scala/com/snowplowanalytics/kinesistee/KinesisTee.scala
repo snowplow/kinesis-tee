@@ -13,13 +13,14 @@
 
 package com.snowplowanalytics.kinesistee
 
-import com.snowplowanalytics.kinesistee.filters.FilterStrategy
-import com.snowplowanalytics.kinesistee.models.Content
-import com.snowplowanalytics.kinesistee.transformation.TransformationStrategy
-import com.snowplowanalytics.kinesistee.models.Stream
+
+import com.snowplowanalytics.kinesistee.models.{Content, FilteredContent, NonEmptyContent}
 import com.snowplowanalytics.kinesistee.routing.RoutingStrategy
 
 import scalaz.{Failure, Success}
+import scalaz.syntax.validation._
+import scalaz.ValidationNel
+
 
 /**
   * This object is responsible for gluing together the routing, transformation and filtering steps
@@ -31,48 +32,39 @@ object KinesisTee extends Tee {
     * using the given routingStrategy. Transform the data using the given transformation strategy
     * first - and then use the given filter strategy to filter the transformed data
     * @param routingStrategy routing strategy to use
-    * @param transformationStrategy transformation strategy to use
-    * @param filterStrategy filtering strategy to use
+    * @param operationStrategy list sequence of operations to be applied
     * @param content list of records/content to tee on
     */
   def tee(routingStrategy: RoutingStrategy,
-          transformationStrategy: Option[TransformationStrategy],
-          filterStrategy: Option[FilterStrategy],
-          content: Seq[Content]): Unit = {
+          operationStrategy: List[Operator],
+          content: Seq[NonEmptyContent]) = {
 
-    // transform first
-    // then filter
-    // then push to stream via StreamWriter
-
-    def transform(content:Content) = {
-      transformationStrategy match  {
-        case Some(strategy) => {
-          strategy.transform(content) match {
-            case Success(s) => s
-            case Failure(f) => {
-              // see https://github.com/snowplow/kinesis-tee/issues/11
-              System.err.println(s"Error transforming item: '$content'\n\n:Reason: ${f.head.getMessage}")
-              content
-            }
-          }
-        }
-        case None => content
-      }
+    /**
+      * Apply operators in sequence
+      * @param content
+      * @return content
+      */
+    def operations(content: NonEmptyContent) = {
+      var transformedContent: ValidationNel[Throwable, Content] = NonEmptyContent(content.row, content.partitionKey).success
+      operationStrategy.foreach((operator: Operator) => {
+        transformedContent = operator(transformedContent)
+      })
+      transformedContent
     }
 
-    def filter(content:Content) = {
-      filterStrategy match {
-        case Some(strategy) => {
-          strategy.filter(content) match {
-            case Success(s) => s
-            case Failure(f) => {
-              // see https://github.com/snowplow/kinesis-tee/issues/11
-              System.err.println(s"Error filtering item '$content'\n\n:Reason: ${f.head.getMessage}")
-              false
-            }
-          }
-        }
-        case None => true
+    /**
+      * Filter FilteredContent and Failures
+      * @param content
+      * @return Boolean
+      */
+
+    def filterEmptyContent(content: ValidationNel[Throwable, Content]) = {
+      content match {
+        case Success(NonEmptyContent(row, partitionKey)) => true
+        case Success(FilteredContent) => false
+        case Failure(f) =>
+          System.err.println(s"Error filtering item '$content'\n\n:Reason: ${f.head.getMessage}")
+          false
       }
     }
 
@@ -84,10 +76,9 @@ object KinesisTee extends Tee {
     }
 
     content
-      .map(transform)
-      .filter(filter)
-      .foreach(route.write)
+        .map(operations)
+        .filter(filterEmptyContent)
+        .foreach(route.write)
   }
-
 
 }

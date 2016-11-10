@@ -15,16 +15,13 @@ package com.snowplowanalytics.kinesistee
 import com.amazonaws.regions.{Region, Regions}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import com.snowplowanalytics.kinesistee.filters.FilterStrategy
-import com.snowplowanalytics.kinesistee.models.Content
-import com.snowplowanalytics.kinesistee.models.Stream
+import com.snowplowanalytics.kinesistee.models.{Content, FilteredContent, NonEmptyContent, Stream}
 import com.snowplowanalytics.kinesistee.routing.RoutingStrategy
-import com.snowplowanalytics.kinesistee.transformation.TransformationStrategy
 import org.mockito.Matchers.{eq => eqTo}
 
 import scala.language.reflectiveCalls
 import scalaz.syntax.validation._
-import scalaz.ValidationNel
+import scalaz.{Success, ValidationNel}
 
 class KinesisTeeSpec extends Specification with Mockito {
 
@@ -37,86 +34,79 @@ class KinesisTeeSpec extends Specification with Mockito {
       override def route(): ValidationNel[String, StreamWriter] = mockStreamWriter.success
     }
 
-    "write everything to the StreamWriter if no filter strategy is in use" in {
-      val sampleContent = Seq(Content("a", "p"), Content("a", "p"), Content("a", "p"))
+    "write everything to the StreamWriter if no operator is in use" in {
+      val sampleContent = Seq(NonEmptyContent("a", "p"), NonEmptyContent("a", "p"), NonEmptyContent("a", "p"))
       val route = mockRoute
-      KinesisTee.tee(route, None, None, sampleContent)
-      there was three (route.mockStreamWriter).write(eqTo(Content("a", "p")))
+      KinesisTee.tee(route, List(), sampleContent)
+      there was three (route.mockStreamWriter).write(eqTo(NonEmptyContent("a", "p").success))
     }
 
-    "write to the stream writer only if the filter function returns false" in {
-      val sampleContent = Seq(Content("a", "p"), Content("a", "p"), Content("a", "p"))
+    "write to the stream writer only if the operator does not filter" in {
+      val sampleContent = Seq(NonEmptyContent("a", "p"), NonEmptyContent("a", "p"), NonEmptyContent("a", "p"))
 
-      class FilterEverything extends FilterStrategy {
-        override def filter(content: Content): ValidationNel[Throwable, Boolean] = {
-          false.success
+      case class FilterEverything() extends Operator {
+        override def apply(content: ValidationNel[Throwable, Content]): ValidationNel[Throwable, Content] = {
+          FilteredContent.success
         }
       }
 
       val routeMock = mockRoute
       KinesisTee.tee(routingStrategy = routeMock,
-                     transformationStrategy = None,
-                     filterStrategy = Some(new FilterEverything),
+                     operationStrategy = List(FilterEverything()),
                      content = sampleContent)
-      there was no (routeMock.mockStreamWriter).write(any[Content])
+      there was no (routeMock.mockStreamWriter).write(any[ValidationNel[Throwable, Content]])
     }
 
-    "transform stream content using the given transformation strategy" in {
-      val sampleContent = Seq(Content("a", "p"), Content("a", "p"), Content("a", "p"))
+    "transform stream content using the given transformation operator" in {
+      val sampleContent = Seq(NonEmptyContent("a", "p"), NonEmptyContent("a", "p"), NonEmptyContent("a", "p"))
 
-      class MakeEverythingB extends TransformationStrategy {
-        override def transform(content: Content): ValidationNel[Throwable, Content] = {
-          Content("b", "p").success
+      case class MakeEverythingB() extends Operator {
+        override def apply(content: ValidationNel[Throwable, Content]): ValidationNel[Throwable, Content] = {
+          NonEmptyContent("b", "p").success
         }
       }
 
       val routeMock = mockRoute
-      KinesisTee.tee(routeMock, Some(new MakeEverythingB), None, sampleContent)
+      KinesisTee.tee(routeMock, List(MakeEverythingB()), sampleContent)
 
-      there was three (routeMock.mockStreamWriter).write(eqTo(Content("b", "p")))
+      there was three (routeMock.mockStreamWriter).write(eqTo(NonEmptyContent("b", "p").success))
     }
 
-    "run the transformation strategy prior to the filter strategy" in {
-      val sampleContent = Seq(Content("a", "p"), Content("a", "p"), Content("a", "p"))
+    "run the operations in chain" in {
+      val sampleContent = Seq(NonEmptyContent("a", "p"), NonEmptyContent("a", "p"), NonEmptyContent("c", "p"))
 
-      class MakeEverythingB extends TransformationStrategy {
-        override def transform(content: Content): ValidationNel[Throwable, Content] = {
-          Content("b", "p").success
+      case class MakeAB() extends Operator {
+        override def apply(content: ValidationNel[Throwable, Content]): ValidationNel[Throwable, Content] = {
+          content match {
+            case Success(NonEmptyContent("a", "p")) => NonEmptyContent("b", "p").success
+            case Success(s) => s.success
+          }
         }
       }
 
-      class FilterNotB extends FilterStrategy {
-        override def filter(content: Content): ValidationNel[Throwable, Boolean] = {
+      case class FilterNotB() extends Operator {
+        override def apply(content: ValidationNel[Throwable, Content]): ValidationNel[Throwable, Content] = {
           content match {
-            case Content("b", "p") => true.success
-            case _ => false.success
+            case Success(NonEmptyContent("b", "p")) => NonEmptyContent("b", "p").success
+            case Success(s) => FilteredContent.success
           }
         }
       }
 
       val routeMock = mockRoute
-      KinesisTee.tee(routeMock, Some(new MakeEverythingB), Some(new FilterNotB), sampleContent)
-
-      there was three (routeMock.mockStreamWriter).write(eqTo(Content("b", "p")))
+      KinesisTee.tee(routeMock, List(MakeAB(),FilterNotB()), sampleContent)
+      there was two (routeMock.mockStreamWriter).write(eqTo(NonEmptyContent("b", "p").success))
     }
 
-    "swallow failures in the filter strategy before pushing anything to the stream writer" in {
-      class FailureFilter extends FilterStrategy {
-        override def filter(content: Content): ValidationNel[Throwable, Boolean] = new IllegalArgumentException("something").failureNel
+
+    "throw failures in the operator strategy before pushing anything to the stream writer" in {
+      case class FailureTransform() extends Operator {
+        override def apply(content: ValidationNel[Throwable, Content]): ValidationNel[Throwable, Content] = new IllegalStateException("something").failureNel
       }
 
       val routeMock = mockRoute
-      there was no (routeMock.mockStreamWriter).write(any[Content])
-    }
-
-    "throw failures in the transformation strategy before pushing anything to the stream writer" in {
-      class FailureTransform extends TransformationStrategy {
-        override def transform(content: Content): ValidationNel[Throwable, Content] = new IllegalStateException("something").failureNel
-      }
-
-      val routeMock = mockRoute
-      KinesisTee.tee(routeMock, Some(new FailureTransform), None, Seq(Content("b", "p")))
-      there was one (routeMock.mockStreamWriter).write(any[Content])
+      KinesisTee.tee(routeMock, List(new FailureTransform), Seq(NonEmptyContent("b", "p")))
+      there was no (routeMock.mockStreamWriter).write(any[ValidationNel[Throwable, Content]])
     }
 
   }

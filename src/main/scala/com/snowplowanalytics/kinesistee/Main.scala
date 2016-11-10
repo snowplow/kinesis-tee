@@ -1,7 +1,5 @@
 package com.snowplowanalytics.kinesistee
 
-import java.lang.String
-
 import awscala.{Region => AWSScalaRegion}
 import awscala.dynamodbv2.DynamoDB
 import com.amazonaws.regions.{Region, Regions}
@@ -9,15 +7,13 @@ import com.amazonaws.services.kinesis.AmazonKinesisClient
 import com.amazonaws.services.lambda.runtime.{Context => LambdaContext}
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent.KinesisEventRecord
-import com.snowplowanalytics.kinesistee.config.{_}
-import com.snowplowanalytics.kinesistee.filters.JavascriptFilter
-import com.snowplowanalytics.kinesistee.transformation.JavascriptTransformer
+import com.snowplowanalytics.kinesistee.config._
+import com.snowplowanalytics.kinesistee.config.{Operator => Op}
 
 import scala.collection.JavaConversions._
 import scalaz._
-import com.snowplowanalytics.kinesistee.models.{Content, Stream}
+import com.snowplowanalytics.kinesistee.models.{NonEmptyContent, Stream}
 import com.snowplowanalytics.kinesistee.routing.PointToPointRoute
-import com.snowplowanalytics.kinesistee.transformation.SnowplowToJson
 
 class Main {
 
@@ -26,6 +22,7 @@ class Main {
   val configurationBuilder:Builder = ConfigurationBuilder
   val getKinesisConnector: (Region, Option[TargetAccount]) => AmazonKinesisClient = StreamWriter.buildClient
   val ddb: (AWSScalaRegion) => DynamoDB = DynamoDB.at
+
 
   /**
     * AWS Lambda entry point
@@ -39,7 +36,7 @@ class Main {
      val data = for { rec: KinesisEventRecord <- event.getRecords
                       row = new String(rec.getKinesis.getData.array(), "UTF-8")
                       partitionKey = rec.getKinesis.getPartitionKey
-                      content = Content(row, partitionKey)
+                      content = NonEmptyContent(row, partitionKey)
                 } yield content
 
     val myRegion = lambdaUtils.getRegionFromArn(context.getInvokedFunctionArn) match {
@@ -47,15 +44,15 @@ class Main {
       case Failure(f) => throw new IllegalStateException(f.toString())
     }
 
-    val transformation = conf.transformer match {
-      case Some(Transformer("BuiltIn", "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON")) => Some(new SnowplowToJson)
-      case Some(Transformer("Javascript", f)) => Some(new JavascriptTransformer(new String(java.util.Base64.getDecoder.decode(f), "UTF-8")))
-      case _ => None
-    }
-
-    val filter = conf.filter match {
-      case Some(Filter("Javascript", f)) => Some(new JavascriptFilter(new String(java.util.Base64.getDecoder.decode(f), "UTF-8")))
-      case _ => None
+    val operations = conf.operator match {
+      case Some(operators) =>
+        operators.map((operator: Op) => {
+          (operator.operatorType, operator.value) match {
+            case (OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON") => SnowplowEnrichedToNestedJsonTransformOperator()
+            case (OperatorType.JAVASCRIPT, js) => JavascriptOperator(new String(java.util.Base64.getDecoder.decode(js), "UTF-8"))
+          }
+        })
+      case _ => List()
     }
 
     val targetAccount = conf.targetStream.targetAccount
@@ -67,8 +64,7 @@ class Main {
     val route = new PointToPointRoute(streamWriter)
 
     kinesisTee.tee(route,
-                   transformation,
-                   filter,
+                   operations,
                    data)
 
     streamWriter.flush

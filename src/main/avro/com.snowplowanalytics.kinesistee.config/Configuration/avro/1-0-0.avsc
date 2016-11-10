@@ -34,33 +34,21 @@
 			}]
 		}
 	}, {
-		"name": "transformer",
+		"name": "operator",
 		"type": [
 			"null", {
-				"name": "Transformer",
-				"type": "record",
-				"fields": [{
-					"name": "type",
-					"type": "string"
-				}, {
-					"name": "value",
-					"type": "string"
-				}]
-			}
-		]
-	}, {
-		"name": "filter",
-		"type": [
-			"null", {
-				"name": "Filter",
-				"type": "record",
-				"fields": [{
-					"name": "type",
-					"type": "string"
-				}, {
-					"name": "value",
-					"type": "string"
-				}]
+				"type": "array",
+				"items": {
+					"name": "Operator",
+					"type": "record",
+					"fields": [{
+						"name": "operatorType",
+						"type": { "name": "OperatorType", "type": "enum", "symbols": ["TRANSFORM_BUILT_IN", "FILTER_BUILT_IN", "JAVASCRIPT"] }
+					}, {
+						"name": "value",
+						"type": "string"
+					}]
+				}
 			}
 		]
 	}]

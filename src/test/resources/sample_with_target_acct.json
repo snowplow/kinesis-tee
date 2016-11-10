@@ -10,11 +10,13 @@
       }
     }
   },
-  "transformer": {
-    "com.snowplowanalytics.kinesistee.config.Transformer": {
-      "type": "BuiltIn",
+  "operator": {
+    "array": [{
+      "operatorType": "TRANSFORM_BUILT_IN",
       "value": "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"
-    }
-  },
-  "filter": null
+    },{
+      "operatorType": "TRANSFORM_BUILT_IN",
+      "value": "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON_2"
+    }]
+  }
 }

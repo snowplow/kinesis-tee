@@ -27,7 +27,7 @@ import com.snowplowanalytics.kinesistee.models._
 class StreamWriterSpec extends Specification with Mockito {
 
   val sampleTarget = new TargetAccount("access_key", "secret_access_key", "eu-west-1")
-  val sampleContent = Content("row", "p")
+  val sampleContent = NonEmptyContent("row", "p")
 
   "building a kinesis producer configuration" should {
 
