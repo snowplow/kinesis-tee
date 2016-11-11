@@ -43,7 +43,7 @@
 					"type": "record",
 					"fields": [{
 						"name": "operatorType",
-						"type": { "name": "OperatorType", "type": "enum", "symbols": ["TRANSFORM_BUILT_IN", "FILTER_BUILT_IN", "JAVASCRIPT_TRANSFORM", "JAVASCRIPT_FILTER"] }
+						"type": { "name": "OperatorType", "type": "enum", "symbols": ["BUILT_IN_TRANSFORM", "BUILT_IN_FILTER", "JAVASCRIPT_TRANSFORM", "JAVASCRIPT_FILTER"] }
 					}, {
 						"name": "value",
 						"type": "string"

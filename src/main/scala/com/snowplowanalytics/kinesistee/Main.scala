@@ -48,7 +48,7 @@ class Main {
       case Some(operators) =>
         operators.map((operator: Op) => {
           (operator.operatorType, operator.value) match {
-            case (OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON") => SnowplowEnrichedToNestedJsonTransformOperator()
+            case (OperatorType.BUILT_IN_TRANSFORM, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON") => SnowplowEnrichedToNestedJsonTransformOperator()
             case (OperatorType.JAVASCRIPT_TRANSFORM, js) => JavascriptTransformOperator(new String(java.util.Base64.getDecoder.decode(js), "UTF-8"))
             case (OperatorType.JAVASCRIPT_FILTER, js) => JavascriptFilterOperator(new String(java.util.Base64.getDecoder.decode(js), "UTF-8"))
           }

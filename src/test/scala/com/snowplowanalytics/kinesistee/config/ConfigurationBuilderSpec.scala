@@ -25,7 +25,7 @@ class ConfigurationBuilderSpec extends Specification with Mockito {
   val sampleGoodConfig = scala.io.Source.fromURL(getClass.getResource("/sample_self_describing_config.json")).mkString
   val sampleConfig = Configuration(name = "My Kinesis Tee example",
     targetStream = TargetStream("my-target-stream", None),
-    operator = Some(List(Operator(OperatorType.TRANSFORM_BUILT_IN, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"))))
+    operator = Some(List(Operator(OperatorType.BUILT_IN_TRANSFORM, "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"))))
 
   "A valid configuration" should {
 

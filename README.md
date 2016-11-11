@@ -35,7 +35,7 @@ Here is an example:
   },
   "operator": {
       "array": [{
-        "operatorType": "TRANSFORM_BUILT_IN",
+        "operatorType": "BUILT_IN_TRANSFORM",
         "value": "SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON"
       }]
     }

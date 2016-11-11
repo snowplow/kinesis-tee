@@ -1,3 +1,12 @@
 Version 0.1.0 (2016-10-03)
 --------------------------
 Initial release
+
+Version 0.2.0 (2016-11-11)
+--------------------------
+Add support for JavaScript-based transformation (#9)
+Rename SNOWPLOW_TO_NESTED_JSON to SNOWPLOW_ENRICHED_EVENT_TO_NESTED_JSON (#23)
+Replace "Release 0.1.0" with "Version 0.1.0" in CHANGELOG (#21)
+Add daisychaining of transformation and filtering steps (#18)
+Replace inaccurate example in README with link to cookbook page (#25)
+Tag must match the version in buildSettings in deploy script (#28)

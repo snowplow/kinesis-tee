@@ -7,13 +7,24 @@ require 'httparty'
 def perror(msg)
     puts "Error: #{msg}"
     exit 1
-end 
+end
+
+def get_version(str)
+    ver_match = str.match(/(\d+\.\d+\.\d+)(-\w+)?/)
+    version = ver_match[1]
+    label = ver_match[2]
+    if label then
+        return version + label
+    end
+    version
+end
 
 def get_project_version(base_dir)
     ver_output = ""
     Dir.chdir(base_dir){
         ver_output = %x[sbt version]
     }
+    get_version(ver_output)
 end
 
 def exec(args) 
@@ -108,11 +119,11 @@ end
 
 actual_version = get_project_version(base_dir)
 
-if actual_version != target_version
+if actual_version != get_version(target_version)
     perror "Tag version '#{target_version}' doesn't match project version '#{actual_version}'"
 end
 
-assembled_jar = "#{base_dir}/target/scala-2.11/kinesis-tee-#{target_version}.jar"
+assembled_jar = "#{base_dir}/target/scala-2.11/kinesis-tee-#{get_version(target_version)}.jar"
 target_dir = "#{base_dir}/deploy/gordon/kinesis-tee/kinesis-tee-app/kinesis-tee-code"
 
 
