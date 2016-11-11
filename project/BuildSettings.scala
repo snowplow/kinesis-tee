@@ -19,7 +19,7 @@ object BuildSettings {
 
   lazy val basicSettings = Seq[Setting[_]](
     organization := "com.snowplowanalytics",
-    version := "0.1.0",
+    version := "0.2.0-rc1",
     retrieveManaged := true,
     description := "Kinesis Tee",
     scalaVersion := "2.11.8",
