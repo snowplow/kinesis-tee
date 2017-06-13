@@ -1,8 +1,8 @@
 # Kinesis Tee
 
-[ ![Build Status] [travis-image] ] [travis]
-[ ![Release] [release-image] ] [releases]
-[ ![License] [license-image] ] [license]
+![Build Status][travis-image]
+![Release][release-image]
+![License][license-image]
 
 ## Overview
 
