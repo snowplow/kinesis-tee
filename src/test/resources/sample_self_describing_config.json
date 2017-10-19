@@ -2,6 +2,7 @@
   "schema": "iglu:com.snowplowanalytics.kinesistee.tbd",
   "data": {
     "name": "My Kinesis Tee example",
+    "batchSize": 1,
     "targetStream": {
       "name": "my-target-stream",
       "targetAccount": null

@@ -62,7 +62,7 @@ class Main {
       case None => Stream(conf.targetStream.name, myRegion)
     }
     val streamWriter = new StreamWriter(targetStream, targetAccount, getKinesisConnector(targetStream.region, targetAccount))
-    val route = new PointToPointRoute(streamWriter)
+    val route = new PointToPointRoute(streamWriter, conf.batchSize)
 
     kinesisTee.tee(route,
                    transformation,

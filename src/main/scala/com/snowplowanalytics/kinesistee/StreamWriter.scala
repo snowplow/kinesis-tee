@@ -18,8 +18,10 @@ import java.nio.ByteBuffer
 import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider, BasicAWSCredentials, DefaultAWSCredentialsProviderChain}
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.kinesis.AmazonKinesisClient
+import com.amazonaws.services.kinesis.model.{PutRecordsRequestEntry, PutRecordsRequest}
 import com.snowplowanalytics.kinesistee.config.TargetAccount
 import com.snowplowanalytics.kinesistee.models.{Content, Stream}
+import scala.collection.JavaConverters._
 
 /**
   * Write a record to a predefined stream
@@ -31,10 +33,17 @@ class StreamWriter(stream: Stream, targetAccount: Option[TargetAccount], produce
 
   /**
     * push the given record to the requested stream
-    * @param content the record to push
+    * @param contents the sequence of records to push
     */
-  def write(content: Content): Unit = {
-    producer.putRecord(stream.name, ByteBuffer.wrap(content.row.getBytes("UTF-8")), content.partitionKey)
+  def write(contents: Seq[Content]): Unit = {
+    val requestEntries = contents.map { content =>
+      val data = ByteBuffer.wrap(content.row.getBytes("UTF-8"))
+
+      new PutRecordsRequestEntry().withData(data).withPartitionKey(content.partitionKey)
+    }
+
+    val request = new PutRecordsRequest().withStreamName(stream.name).withRecords(requestEntries.asJava)
+    producer.putRecords(request)
   }
 
   def flush: Unit = {

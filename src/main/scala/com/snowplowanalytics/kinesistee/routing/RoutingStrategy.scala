@@ -20,6 +20,8 @@ import com.snowplowanalytics.kinesistee.models.Stream
 
 trait RoutingStrategy {
 
+  val batchSize: Int
+
   def route(): ValidationNel[String, StreamWriter]
 
 }

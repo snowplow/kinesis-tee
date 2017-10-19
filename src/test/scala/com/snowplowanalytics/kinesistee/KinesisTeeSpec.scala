@@ -34,6 +34,7 @@ class KinesisTeeSpec extends Specification with Mockito {
 
     def mockRoute = new RoutingStrategy {
       val mockStreamWriter = mock[StreamWriter]
+      override val batchSize: Int = 100
       override def route(): ValidationNel[String, StreamWriter] = mockStreamWriter.success
     }
 
@@ -41,7 +42,7 @@ class KinesisTeeSpec extends Specification with Mockito {
       val sampleContent = Seq(Content("a", "p"), Content("a", "p"), Content("a", "p"))
       val route = mockRoute
       KinesisTee.tee(route, None, None, sampleContent)
-      there was three (route.mockStreamWriter).write(eqTo(Content("a", "p")))
+      there was one (route.mockStreamWriter).write(eqTo(sampleContent))
     }
 
     "write to the stream writer only if the filter function returns false" in {
@@ -58,7 +59,7 @@ class KinesisTeeSpec extends Specification with Mockito {
                      transformationStrategy = None,
                      filterStrategy = Some(new FilterEverything),
                      content = sampleContent)
-      there was no (routeMock.mockStreamWriter).write(any[Content])
+      there was no (routeMock.mockStreamWriter).write(any[Seq[Content]])
     }
 
     "transform stream content using the given transformation strategy" in {
@@ -73,7 +74,8 @@ class KinesisTeeSpec extends Specification with Mockito {
       val routeMock = mockRoute
       KinesisTee.tee(routeMock, Some(new MakeEverythingB), None, sampleContent)
 
-      there was three (routeMock.mockStreamWriter).write(eqTo(Content("b", "p")))
+      val expectedContents = Seq(Content("b", "p"), Content("b", "p"), Content("b", "p"))
+      there was one (routeMock.mockStreamWriter).write(eqTo(expectedContents))
     }
 
     "run the transformation strategy prior to the filter strategy" in {
@@ -97,7 +99,8 @@ class KinesisTeeSpec extends Specification with Mockito {
       val routeMock = mockRoute
       KinesisTee.tee(routeMock, Some(new MakeEverythingB), Some(new FilterNotB), sampleContent)
 
-      there was three (routeMock.mockStreamWriter).write(eqTo(Content("b", "p")))
+      val expectedContents = Seq(Content("b", "p"), Content("b", "p"), Content("b", "p"))
+      there was one (routeMock.mockStreamWriter).write(eqTo(expectedContents))
     }
 
     "swallow failures in the filter strategy before pushing anything to the stream writer" in {
@@ -106,7 +109,7 @@ class KinesisTeeSpec extends Specification with Mockito {
       }
 
       val routeMock = mockRoute
-      there was no (routeMock.mockStreamWriter).write(any[Content])
+      there was no (routeMock.mockStreamWriter).write(any[Seq[Content]])
     }
 
     "throw failures in the transformation strategy before pushing anything to the stream writer" in {
@@ -116,7 +119,7 @@ class KinesisTeeSpec extends Specification with Mockito {
 
       val routeMock = mockRoute
       KinesisTee.tee(routeMock, Some(new FailureTransform), None, Seq(Content("b", "p")))
-      there was one (routeMock.mockStreamWriter).write(any[Content])
+      there was one (routeMock.mockStreamWriter).write(any[Seq[Content]])
     }
 
   }

@@ -27,9 +27,10 @@ Here is an example:
 
 ```json
 {
-  "schema": "iglu:com.snowplowanalytics.kinesis-tee/Config/avro/1-0-0",
+  "schema": "iglu:com.snowplowanalytics.kinesis-tee/Config/avro/1-1-0",
   "data": {
     "name": "My Kinesis Tee example",
+    "batchSize": 100,
     "targetStream": {
       "name": "my-target-stream",
     },
@@ -41,7 +42,7 @@ Here is an example:
 }
 ```
 
-Avro schema for configuration: **[com.snowplowanalytics.kinesistee/config/avro/1-0-0] [config-file]**
+Avro schema for configuration: **[com.snowplowanalytics.kinesistee/config/avro/1-1-0] [config-file]**
 
 ## Find out more
 
@@ -79,4 +80,4 @@ limitations under the License.
 
 [tee]: https://en.wikipedia.org/wiki/Tee_%28command%29
 
-[config-file]: http://iglucentral.com/schemas/com.snowplowanalytics.kinesistee.config/Configuration/avro/1-0-0
+[config-file]: http://iglucentral.com/schemas/com.snowplowanalytics.kinesistee.config/Configuration/avro/1-1-0

@@ -39,6 +39,7 @@ import com.amazonaws.services.kinesis.AmazonKinesisClient
 class MainSpec extends Specification with Mockito {
 
   val sampleConfig = Configuration(name = "My Kinesis Tee example",
+                                   batchSize = 1,
                                    targetStream = TargetStream("my-target-stream", None),
                                    transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
                                    filter = None)
@@ -186,7 +187,8 @@ class MainSpec extends Specification with Mockito {
       main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
       val expectedRouter = new PointToPointRoute(new StreamWriter(Stream(sampleConfig.targetStream.name, Region.getRegion(Regions.US_EAST_1)),
                                                                   sampleConfig.targetStream.targetAccount,
-                                                                  mock[AmazonKinesisClient]))
+                                                                  mock[AmazonKinesisClient]),
+                                                 1)
 
       val lastRoutingStrategy:PointToPointRoute = main.kinesisTee.lastRoutingStrategy.get
       lastRoutingStrategy.toString mustEqual expectedRouter.toString
