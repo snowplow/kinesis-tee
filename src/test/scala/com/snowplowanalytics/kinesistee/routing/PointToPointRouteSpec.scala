@@ -31,7 +31,7 @@ class PointToPointRouteSpec extends Specification with ValidationMatchers with M
 
     "direct traffic from the given origin to the given destination" in {
       val target = buildTarget("destination")
-      val route = new PointToPointRoute(target)
+      val route = new PointToPointRoute(target, 1)
       route.route must beSuccessful(target)
     }
 
@@ -41,7 +41,7 @@ class PointToPointRouteSpec extends Specification with ValidationMatchers with M
 
     "display the destination" in {
       val dest = new StreamWriter(Stream("destination", Region.getRegion(Regions.US_EAST_1)), None, mock[AmazonKinesisClient])
-      val sample = new PointToPointRoute(dest)
+      val sample = new PointToPointRoute(dest, 1)
       sample.toString mustEqual s"Stream to stream route: stream `source` -> stream ${dest.toString}"
     }
 

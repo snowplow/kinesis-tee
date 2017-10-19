@@ -1,5 +1,6 @@
 {
   "name": "My Kinesis Tee example",
+  "batchSize": 1,
   "targetStream": {
     "name": "my-target-stream",
     "targetAccount": {

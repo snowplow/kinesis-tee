@@ -23,7 +23,7 @@ import com.snowplowanalytics.kinesistee.models.Stream
   * This routing strategy passes all traffic through to the destination
   * @param destination the endpoint to route all data to
   */
-class PointToPointRoute(destination: StreamWriter) extends RoutingStrategy {
+class PointToPointRoute(destination: StreamWriter, val batchSize: Int) extends RoutingStrategy {
 
   /**
     * Routing strategy that sends all traffic to the given destination

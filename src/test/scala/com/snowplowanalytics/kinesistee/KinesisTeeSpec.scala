@@ -34,6 +34,7 @@ class KinesisTeeSpec extends Specification with Mockito {
 
     def mockRoute = new RoutingStrategy {
       val mockStreamWriter = mock[StreamWriter]
+      override val batchSize: Int = 100
       override def route(): ValidationNel[String, StreamWriter] = mockStreamWriter.success
     }
 

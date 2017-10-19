@@ -86,7 +86,7 @@ object KinesisTee extends Tee {
     content
       .map(transform)
       .filter(filter)
-      .grouped(100)
+      .grouped(routingStrategy.batchSize)
       .foreach(route.write)
   }
 

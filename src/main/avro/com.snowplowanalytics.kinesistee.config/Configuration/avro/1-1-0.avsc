@@ -8,6 +8,11 @@
          "type":"string"
       },
       {
+         "name":"batchSize",
+         "type":"int",
+         "minimum":1
+      },
+      {
          "name":"targetStream",
          "type":{
             "name":"TargetStream",
