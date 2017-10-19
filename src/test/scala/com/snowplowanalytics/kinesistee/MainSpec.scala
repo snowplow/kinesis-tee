@@ -247,6 +247,15 @@ class MainSpec extends Specification with Mockito {
                                           any[Option[FilterStrategy]],
                                           any[Seq[Content]])
     }
+
+    "tee caches configuration" in {
+      val main = new MockMain
+
+      main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
+      main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
+
+      there was one (main.lambdaUtils).getLambdaDescription(any[String], any[String])
+    }
   }
 
 }

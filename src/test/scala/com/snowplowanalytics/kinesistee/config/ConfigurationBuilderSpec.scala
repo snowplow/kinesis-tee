@@ -68,8 +68,8 @@ class ConfigurationBuilderSpec extends Specification with Mockito {
       val items:util.List[java.util.Map[java.lang.String,com.amazonaws.services.dynamodbv2.model.AttributeValue]] = new util.ArrayList()
 
       val one:util.Map[String,com.amazonaws.services.dynamodbv2.model.AttributeValue] = new util.HashMap()
-      one.put("id", new AttributeValue(Some("with-id")))
-      one.put("configuration", new AttributeValue(Some(sampleGoodConfig)))
+      one.put("id", new AttributeValue(Some("with-id"), l = Nil))
+      one.put("configuration", new AttributeValue(Some(sampleGoodConfig), l = Nil))
       items.add(one)
 
       res.getItems returns items
@@ -95,8 +95,8 @@ class ConfigurationBuilderSpec extends Specification with Mockito {
       val items:util.List[java.util.Map[java.lang.String,com.amazonaws.services.dynamodbv2.model.AttributeValue]] = new util.ArrayList()
 
       val one:util.Map[String,com.amazonaws.services.dynamodbv2.model.AttributeValue] = new util.HashMap()
-      one.put("id", new AttributeValue(Some("with-id")))
-      one.put("this-is-not-config", new AttributeValue(Some("abc")))
+      one.put("id", new AttributeValue(Some("with-id"), l = Nil))
+      one.put("this-is-not-config", new AttributeValue(Some("abc"), l = Nil))
 
       items.add(one)
       res.getItems returns items

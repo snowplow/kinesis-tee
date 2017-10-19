@@ -11,6 +11,7 @@ import com.amazonaws.services.lambda.runtime.events.KinesisEvent
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent.KinesisEventRecord
 import com.snowplowanalytics.kinesistee.config.{_}
 import com.snowplowanalytics.kinesistee.filters.JavascriptFilter
+import org.joda.time.DateTime
 
 import scala.collection.JavaConversions._
 import scalaz._
@@ -18,13 +19,23 @@ import com.snowplowanalytics.kinesistee.models.{Content, Stream}
 import com.snowplowanalytics.kinesistee.routing.PointToPointRoute
 import com.snowplowanalytics.kinesistee.transformation.SnowplowToJson
 
+object Main {
+  case class ConfigurationCache(lastUpdate: DateTime, configuration: Configuration)
+
+  val ConfigurationCacheDuration = 60 * 1000
+}
+
 class Main {
+
+  import Main._
 
   val kinesisTee:Tee = KinesisTee
   val lambdaUtils:AwsLambdaUtils = LambdaUtils
   val configurationBuilder:Builder = ConfigurationBuilder
   val getKinesisConnector: (Region, Option[TargetAccount]) => AmazonKinesisClient = StreamWriter.buildClient
   val ddb: (AWSScalaRegion) => DynamoDB = DynamoDB.at
+
+  var configurationCache: Option[ConfigurationCache] = None
 
   /**
     * AWS Lambda entry point
@@ -34,7 +45,7 @@ class Main {
     */
   def kinesisEventHandler(event: KinesisEvent, context: LambdaContext): Unit = {
 
-     val conf = getConfiguration(context)
+     val conf = getCachedConfiguration(context)
      val data = for { rec: KinesisEventRecord <- event.getRecords
                       row = new String(rec.getKinesis.getData.array(), "UTF-8")
                       partitionKey = rec.getKinesis.getPartitionKey
@@ -71,6 +82,18 @@ class Main {
 
     streamWriter.flush
     streamWriter.close
+  }
+
+  def getCachedConfiguration(context: LambdaContext): Configuration = {
+    configurationCache
+      .filter(_.lastUpdate.plus(ConfigurationCacheDuration).isAfterNow)
+      .map(_.configuration)
+      .getOrElse {
+        val newConfiguration = getConfiguration(context)
+        configurationCache = Some(ConfigurationCache(DateTime.now, newConfiguration))
+
+        newConfiguration
+      }
   }
 
   def getConfiguration(context: LambdaContext): Configuration = {
