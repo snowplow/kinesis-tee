@@ -21,8 +21,6 @@ import com.snowplowanalytics.kinesistee.transformation.SnowplowToJson
 
 object Main {
   case class ConfigurationCache(lastUpdate: DateTime, configuration: Configuration)
-
-  val ConfigurationCacheDuration = 60 * 1000
 }
 
 class Main {
@@ -85,8 +83,15 @@ class Main {
   }
 
   def getCachedConfiguration(context: LambdaContext): Configuration = {
+
+    def isUptodate(configurationCache: ConfigurationCache): Boolean = {
+      val cacheDurationSecs = configurationCache.configuration.configCacheDurationSecs
+
+      configurationCache.lastUpdate.plus(cacheDurationSecs * 1000).isAfterNow
+    }
+
     configurationCache
-      .filter(_.lastUpdate.plus(ConfigurationCacheDuration).isAfterNow)
+      .filter(isUptodate)
       .map(_.configuration)
       .getOrElse {
         val newConfiguration = getConfiguration(context)
