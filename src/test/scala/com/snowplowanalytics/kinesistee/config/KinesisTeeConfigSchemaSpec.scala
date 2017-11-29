@@ -39,6 +39,7 @@ class KinesisTeeConfigSchemaSpec extends Specification {
     result match {
       case scala.util.Failure(f) => ko(stackTrace(f))
       case scala.util.Success(s) => s mustEqual Configuration(name = "My Kinesis Tee example",
+                                                              configCacheDurationSecs = 60,
                                                               targetStream = TargetStream("my-target-stream", None),
                                                               transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
                                                               filter = None)
@@ -53,6 +54,7 @@ class KinesisTeeConfigSchemaSpec extends Specification {
     result match {
       case scala.util.Failure(f) => ko(stackTrace(f))
       case scala.util.Success(s) => s mustEqual Configuration(name = "My Kinesis Tee example",
+        configCacheDurationSecs = 60,
         targetStream = TargetStream("my-target-stream", Some(TargetAccount("*", "*", "eu-west-1"))),
         transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
         filter = None)

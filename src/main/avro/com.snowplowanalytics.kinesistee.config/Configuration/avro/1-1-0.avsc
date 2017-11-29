@@ -8,6 +8,10 @@
          "type":"string"
       },
       {
+         "name":"configCacheDurationSecs",
+         "type":"int"
+      },
+      {
          "name":"targetStream",
          "type":{
             "name":"TargetStream",

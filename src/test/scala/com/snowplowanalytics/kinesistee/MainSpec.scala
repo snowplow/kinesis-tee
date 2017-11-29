@@ -39,6 +39,7 @@ import com.amazonaws.services.kinesis.AmazonKinesisClient
 class MainSpec extends Specification with Mockito {
 
   val sampleConfig = Configuration(name = "My Kinesis Tee example",
+                                   configCacheDurationSecs = 60,
                                    targetStream = TargetStream("my-target-stream", None),
                                    transformer = Some(Transformer(BuiltIn.SNOWPLOW_TO_NESTED_JSON)),
                                    filter = None)
@@ -246,6 +247,32 @@ class MainSpec extends Specification with Mockito {
                                           eqTo(None),
                                           any[Option[FilterStrategy]],
                                           any[Seq[Content]])
+    }
+
+    "tee caches configuration" in {
+      val main = new MockMain
+
+      main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
+      main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
+
+      there was one (main.lambdaUtils).getLambdaDescription(any[String], any[String])
+    }
+
+    "tee not caching configuration when cache duration is zero" in {
+      val configWithoutCache = sampleConfig.copy(configCacheDurationSecs = 0)
+
+      val main = new MockMain {
+        override val configurationBuilder:Builder = {
+          val builder = mock[Builder]
+          builder.build(any[String], any[String])(any[DynamoDB]) returns configWithoutCache
+          builder
+        }
+      }
+
+      main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
+      main.kinesisEventHandler(sampleKinesisEvent, sampleContext)
+
+      there were two (main.lambdaUtils).getLambdaDescription(any[String], any[String])
     }
   }
 

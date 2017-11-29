@@ -2,6 +2,7 @@
   "schema": "iglu:com.snowplowanalytics.kinesistee.tbd",
   "data": {
     "name": "My Kinesis Tee example",
+    "configCacheDurationSecs": 60,
     "targetStream": {
       "name": "my-target-stream",
       "targetAccount": null

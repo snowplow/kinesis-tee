@@ -27,9 +27,10 @@ Here is an example:
 
 ```json
 {
-  "schema": "iglu:com.snowplowanalytics.kinesis-tee/Config/avro/1-0-0",
+  "schema": "iglu:com.snowplowanalytics.kinesis-tee/Config/avro/1-1-0",
   "data": {
     "name": "My Kinesis Tee example",
+    "configCacheDurationSecs": 60,
     "targetStream": {
       "name": "my-target-stream",
     },
