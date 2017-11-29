@@ -27,13 +27,13 @@ class Main {
 
   import Main._
 
+  private var configurationCache: Option[ConfigurationCache] = None
+
   val kinesisTee:Tee = KinesisTee
   val lambdaUtils:AwsLambdaUtils = LambdaUtils
   val configurationBuilder:Builder = ConfigurationBuilder
   val getKinesisConnector: (Region, Option[TargetAccount]) => AmazonKinesisClient = StreamWriter.buildClient
   val ddb: (AWSScalaRegion) => DynamoDB = DynamoDB.at
-
-  var configurationCache: Option[ConfigurationCache] = None
 
   /**
     * AWS Lambda entry point
