@@ -1,12 +1,12 @@
 # Kinesis Tee
 
-[ ![Build Status] [travis-image] ] [travis]
-[ ![Release] [release-image] ] [releases]
-[ ![License] [license-image] ] [license]
+[ ![Build Status][travis-image]][travis]
+[ ![Release][release-image]][releases]
+[ ![License][license-image]][license]
 
 ## Overview
 
-Kinesis Tee is like **[Unix tee] [tee]**, but for Kinesis streams. Use it to:
+Kinesis Tee is like **[Unix tee][tee]**, but for Kinesis streams. Use it to:
 
 1. Transform the format of a Kinesis stream
 2. Filter records from a Kinesis stream based on rules
@@ -41,19 +41,18 @@ Here is an example:
 }
 ```
 
-Avro schema for configuration: **[com.snowplowanalytics.kinesistee/config/avro/1-0-0] [config-file]**
+Avro schema for configuration: **[com.snowplowanalytics.kinesistee/config/avro/1-0-0][config-file]**
 
 ## Find out more
 
-|  **[Devops Guide] [devops-guide]**     | **[Developers Guide] [developers-guide]**     |
+|  **[Devops Guide][devops-guide]**     | **[Developers Guide][developers-guide]**     |
 |:--------------------------------------:|:---------------------------------------------:|
-|  [![i1] [devops-image]] [devops-guide] | [![i3] [developers-image]] [developers-guide] |
 
 ## Copyright and license
 
 Kinesis Tee is copyright 2015-2016 Snowplow Analytics Ltd.
 
-Licensed under the **[Apache License, Version 2.0] [license]** (the "License");
+Licensed under the **[Apache License, Version 2.0][license]** (the "License");
 you may not use this software except in compliance with the License.
 
 Unless required by applicable law or agreed to in writing, software
@@ -64,9 +63,6 @@ limitations under the License.
 
 [developers-guide]: https://github.com/snowplow/kinesis-tee/wiki/Guide-for-developers
 [devops-guide]: https://github.com/snowplow/kinesis-tee/wiki/Guide-for-devops-users
-
-[devops-image]:  http://sauna-github-static.s3-website-us-east-1.amazonaws.com/devops.svg
-[developers-image]:  http://sauna-github-static.s3-website-us-east-1.amazonaws.com/developer.svg
 
 [travis-image]: https://travis-ci.org/snowplow/kinesis-tee.png?branch=master
 [travis]: http://travis-ci.org/snowplow/kinesis-tee
